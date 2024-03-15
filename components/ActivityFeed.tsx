@@ -36,13 +36,14 @@ const knockFeed = knockClient.feeds.initialize(
   }
 );
 
-export default function Feed() {
+export default function ActivityFeed() {
   const [feed, setFeed] = useState({});
   useEffect(() => {
     knockFeed.listenForUpdates();
     const fetchFeed = async () => {
       await knockFeed.fetch();
       const feedState = knockFeed.getState();
+      console.log(feedState);
       setFeed(feedState);
     };
     fetchFeed();
@@ -56,7 +57,11 @@ export default function Feed() {
     const archivedItems = feed?.items?.filter((item) => item.archived_at);
     return [feedItems, archivedItems];
   }, [feed]);
-
+  function markAllAsRead() {
+    knockFeed.markAllAsRead();
+    setFeed(knockFeed.getState());
+    console.log(feed);
+  }
   function markAsRead(item) {
     knockFeed.markAsRead(item);
     setFeed(knockFeed.getState());
@@ -103,7 +108,11 @@ export default function Feed() {
       </TabsList>
       <TabsContent value="inbox">
         <div className="my-6 flex">
-          <Button variant="outline" className="w-full mr-2">
+          <Button
+            variant="outline"
+            onClick={() => markAllAsRead()}
+            className="w-full mr-2"
+          >
             Mark all as read
           </Button>
           <Button variant="outline" className="w-full ml-2">
