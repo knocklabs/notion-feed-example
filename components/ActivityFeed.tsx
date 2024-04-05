@@ -1,5 +1,5 @@
 "use client";
-import Knock, { Feed, FeedItem } from "@knocklabs/client";
+import Knock, { Feed, FeedItem, FeedStoreState } from "@knocklabs/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -10,17 +10,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
-import { Avatar, AvatarImage } from "./ui/avatar";
-import {
-  BookmarkCheck,
-  BookmarkX,
-  Archive,
-  ArchiveRestore,
-  Divide,
-  Inbox,
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Inbox } from "lucide-react";
+
+import { FeedItemCard } from "./FeedItemCard";
 
 import { useEffect, useMemo, useState } from "react";
 const knockClient = new Knock(
@@ -37,45 +31,37 @@ const knockFeed = knockClient.feeds.initialize(
 );
 
 export default function ActivityFeed() {
-  const [feed, setFeed] = useState({});
+  const [feed, setFeed] = useState<FeedStoreState>({} as FeedStoreState);
   useEffect(() => {
     knockFeed.listenForUpdates();
     const fetchFeed = async () => {
       await knockFeed.fetch();
       const feedState = knockFeed.getState();
-      console.log(feedState);
       setFeed(feedState);
     };
     fetchFeed();
-    knockFeed.on("items.received.*", (data) => {
+
+    knockFeed.on("items.*", () => {
       setFeed(knockFeed.getState());
     });
   }, []);
 
   const [feedItems, archivedItems] = useMemo(() => {
-    const feedItems = feed?.items?.filter((item) => !item.archived_at);
-    const archivedItems = feed?.items?.filter((item) => item.archived_at);
+    const feedItems = feed?.items?.filter(
+      (item: FeedItem) => !item.archived_at
+    );
+    const archivedItems = feed?.items?.filter(
+      (item: FeedItem) => item.archived_at
+    );
     return [feedItems, archivedItems];
   }, [feed]);
-  function markAllAsRead() {
-    knockFeed.markAllAsRead();
-    setFeed(knockFeed.getState());
-    console.log(feed);
-  }
-  function markAsRead(item) {
-    knockFeed.markAsRead(item);
+  async function markAllAsRead() {
+    await knockFeed.markAllAsRead();
     setFeed(knockFeed.getState());
   }
-  function markAsUnread(item) {
-    knockFeed.markAsUnread(item);
-    setFeed(knockFeed.getState());
-  }
-  function markAsArchived(item) {
-    knockFeed.markAsArchived(item);
-    setFeed(knockFeed.getState());
-  }
-  function markAsUnarchived(item) {
-    knockFeed.markAsUnarchived(item);
+
+  async function markAllAsArchived() {
+    knockFeed.markAllAsArchived();
     setFeed(knockFeed.getState());
   }
 
@@ -115,7 +101,11 @@ export default function ActivityFeed() {
           >
             Mark all as read
           </Button>
-          <Button variant="outline" className="w-full ml-2">
+          <Button
+            variant="outline"
+            className="w-full ml-2"
+            onClick={() => markAllAsArchived()}
+          >
             Archive all
           </Button>
         </div>
@@ -125,16 +115,14 @@ export default function ActivityFeed() {
               <FeedItemCard
                 key={item.id}
                 item={item}
-                markAsRead={markAsRead}
-                markAsUnread={markAsUnread}
-                markAsArchived={markAsArchived}
+                knockFeed={knockFeed}
               ></FeedItemCard>
             );
           })
         ) : (
           <div className="flex flex-col items-center my-12 py-12 bg-slate-50 rounded-md">
             <Inbox className="w-16 h-16"></Inbox>
-            <p className="mt-6">You're all caught up</p>
+            <p className="mt-6">You&apos;re all caught up</p>
           </div>
         )}
       </TabsContent>
@@ -144,109 +132,22 @@ export default function ActivityFeed() {
             <FeedItemCard
               key={item.id}
               item={item}
-              markAsRead={markAsRead}
-              markAsUnread={markAsUnread}
-              markAsUnarchived={markAsUnarchived}
+              knockFeed={knockFeed}
             ></FeedItemCard>
           );
         })}
       </TabsContent>
-      <TabsContent value="all">Change your password here.</TabsContent>
+      <TabsContent value="all">
+        {feed.items?.map((item: FeedItem) => {
+          return (
+            <FeedItemCard
+              key={item.id}
+              item={item}
+              knockFeed={knockFeed}
+            ></FeedItemCard>
+          );
+        })}
+      </TabsContent>
     </Tabs>
-  );
-}
-
-function FeedItemCard({
-  item,
-  markAsRead,
-  markAsUnread,
-  markAsArchived,
-  markAsUnarchived,
-}: {
-  item: FeedItem;
-  markAsRead: Function;
-  markAsUnread: Function;
-  markAsArchived?: Function;
-  markAsUnarchived?: Function;
-}) {
-  const content = item.blocks.filter((block) => block.name === "body")[0];
-  return (
-    <div
-      className={`border-b border-[#333333] py-4 ${
-        item.read_at ? "opacity-70" : ""
-      } `}
-    >
-      <div className="flex items-center mb-2">
-        <Avatar>
-          <AvatarImage
-            alt="Colin White"
-            src="https://v0.dev/placeholder.svg?height=40&width=40"
-          />
-        </Avatar>
-        <div className="ml-2">
-          <p className="font-semibold">
-            {item.actors.map((actor) => actor.name).join(" &")} took an action{" "}
-            <span className="text-sm text-[#BBBBBB]">
-              {new Date(item.inserted_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              })}
-            </span>
-          </p>
-        </div>
-        <div className="ml-16">
-          {item.read_at === null ? (
-            <Button
-              variant="outline"
-              size="icon"
-              className="mx-1"
-              onClick={() => {
-                markAsRead(item);
-              }}
-            >
-              <BookmarkCheck className="h-4 w-4"></BookmarkCheck>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="icon"
-              className="mx-1"
-              onClick={() => {
-                markAsUnread(item);
-              }}
-            >
-              <BookmarkX className="h-4 w-4"></BookmarkX>
-            </Button>
-          )}
-          {item.archived_at === null ? (
-            <Button
-              variant="outline"
-              size="icon"
-              className="mx-1"
-              onClick={() => {
-                markAsArchived(item);
-              }}
-            >
-              <Archive className="h-4 w-4"></Archive>
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="icon"
-              className="mx-1"
-              onClick={() => {
-                markAsUnarchived(item);
-              }}
-            >
-              <ArchiveRestore className="h-4 w-4"></ArchiveRestore>
-            </Button>
-          )}
-        </div>
-      </div>
-      <p
-        className="text-sm mb-1"
-        dangerouslySetInnerHTML={{ __html: content.rendered }}
-      ></p>
-    </div>
   );
 }
