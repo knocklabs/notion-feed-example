@@ -1,5 +1,5 @@
 "use client";
-import Knock, { Feed, FeedItem, FeedStoreState } from "@knocklabs/client";
+import Knock, { FeedItem, FeedStoreState } from "@knocklabs/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,

@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
-import { Feed, FeedItem, Recipient, User } from "@knocklabs/client";
+import { Feed, FeedItem } from "@knocklabs/client";
 
 export function FeedItemCard({
   item,
