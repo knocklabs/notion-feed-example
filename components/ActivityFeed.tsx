@@ -13,10 +13,12 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Inbox } from "lucide-react";
+import { Toaster } from "@/components/ui/toaster";
 
 import { FeedItemCard } from "./FeedItemCard";
 
 import { useEffect, useMemo, useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 const knockClient = new Knock(
   process.env.NEXT_PUBLIC_KNOCK_PUBLIC_API_KEY as string
 );
@@ -32,6 +34,7 @@ const knockFeed = knockClient.feeds.initialize(
 
 export default function ActivityFeed() {
   const [feed, setFeed] = useState<FeedStoreState>({} as FeedStoreState);
+  const { toast } = useToast();
   useEffect(() => {
     knockFeed.listenForUpdates();
     const fetchFeed = async () => {
@@ -40,6 +43,22 @@ export default function ActivityFeed() {
       setFeed(feedState);
     };
     fetchFeed();
+    knockFeed.on(
+      "items.received.realtime",
+      ({ items }: { items: FeedItem[] }) => {
+        items.forEach((item) => {
+          if (item.data.showToast) {
+            toast({
+              title: `📨 New feed item at ${new Date(
+                item.inserted_at
+              ).toLocaleString()}`,
+              description: "Snap! This real-time feed is mind-blowing 🤯",
+            });
+          }
+        });
+        setFeed(knockFeed.getState());
+      }
+    );
 
     knockFeed.on("items.*", () => {
       setFeed(knockFeed.getState());
@@ -71,7 +90,7 @@ export default function ActivityFeed() {
         <TabsTrigger value="inbox">
           Inbox{" "}
           {feed.loading ? null : (
-            <Badge className="ml-2" variant="destructive">
+            <Badge className="ml-2" variant="secondary">
               {feed?.metadata?.unread_count}
             </Badge>
           )}
@@ -148,6 +167,7 @@ export default function ActivityFeed() {
           );
         })}
       </TabsContent>
+      <Toaster />
     </Tabs>
   );
 }
