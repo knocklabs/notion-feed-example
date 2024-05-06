@@ -29,3 +29,17 @@ Once you've added those values and environment variables, you can run the projec
 ```bash
 npm run dev
 ```
+
+## Tutorials
+
+You can reference the following resources as you get started. We created blog posts and videos for creating both the base feed experience and integrating toasts.
+
+### Create a Notion-style feed
+
+[✍️ Read the step-by-step tutorial](https://knock.app/blog/building-notion-style-activity-feed-nextjs)
+[📹 Watch the video](https://youtu.be/V-65frts9X0)
+
+### Add real-time toasts
+
+[✍️ Read the step-by-step tutorial](https://knock.app/blog/adding-realtime-toast-notifications-in-nextjs)
+[📹 Watch the video](https://youtu.be/U9uuW19i-u0)
