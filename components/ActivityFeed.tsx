@@ -47,7 +47,7 @@ export default function ActivityFeed() {
       "items.received.realtime",
       ({ items }: { items: FeedItem[] }) => {
         items.forEach((item) => {
-          if (item.data.showToast) {
+          if (item.data && item.data.showToast) {
             toast({
               title: `📨 New feed item at ${new Date(
                 item.inserted_at
@@ -61,6 +61,7 @@ export default function ActivityFeed() {
     );
 
     knockFeed.on("items.*", () => {
+      console.log("calling items.*");
       setFeed(knockFeed.getState());
     });
   }, []);
@@ -76,12 +77,10 @@ export default function ActivityFeed() {
   }, [feed]);
   async function markAllAsRead() {
     await knockFeed.markAllAsRead();
-    setFeed(knockFeed.getState());
   }
 
   async function markAllAsArchived() {
     knockFeed.markAllAsArchived();
-    setFeed(knockFeed.getState());
   }
 
   return (
