@@ -48,10 +48,11 @@ function PreferenceSettingsRow({
         (channelType) => {
           return (
             <div className="mt-2" key={`${preferenceKey}_${channelType}`}>
-              <label htmlFor="">
+              <label htmlFor={`${preferenceKey}_${channelType}`}>
                 {PreferenceViewConfig.ChannelTypeLabels[channelType]}
               </label>
               <input
+                id={`${preferenceKey}_${channelType}`}
                 className="ml-2"
                 type="checkbox"
                 checked={
