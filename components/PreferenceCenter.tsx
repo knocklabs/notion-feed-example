@@ -1,7 +1,9 @@
 import Knock from "@knocklabs/client";
 import { useEffect, useState } from "react";
-const knockClient = new Knock(process.env.NEXT_PUBLIC_KNOCK_PUBLIC_API_KEY);
-knockClient.authenticate(process.env.NEXT_PUBLIC_KNOCK_USER_ID);
+const knockClient = new Knock(
+  process.env.NEXT_PUBLIC_KNOCK_PUBLIC_API_KEY as string
+);
+knockClient.authenticate(process.env.NEXT_PUBLIC_KNOCK_USER_ID as string);
 
 const PreferenceViewConfig = {
   RowSettings: {
@@ -30,6 +32,11 @@ function PreferenceSettingsRow({
   preferenceKey,
   channelTypeSettings,
   onChange,
+}: {
+  preferenceType: string;
+  preferenceKey: string;
+  channelTypeSettings: Record<string, boolean>;
+  onChange: Function;
 }) {
   return (
     <div
@@ -104,6 +111,10 @@ export default function PreferenceCenter() {
     preferenceKey,
     preferenceType,
     channelTypeSettings,
+  }: {
+    preferenceKey: string;
+    preferenceType: string;
+    channelTypeSettings: Record<string, boolean>;
   }) => {
     //create a new preference set with local preferences as starting point
     const preferenceUpdate = {
