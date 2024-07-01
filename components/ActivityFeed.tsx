@@ -1,5 +1,10 @@
 "use client";
-import Knock, { FeedItem, FeedStoreState } from "@knocklabs/client";
+
+import {
+  useKnockClient,
+  useNotificationStore,
+  useNotifications,
+} from "@knocklabs/react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -17,66 +22,22 @@ import { Toaster } from "@/components/ui/toaster";
 
 import { FeedItemCard } from "./FeedItemCard";
 
-import { useEffect, useMemo, useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
 import PreferenceCenter from "./PreferenceCenter";
-
-const knockClient = new Knock(
-  process.env.NEXT_PUBLIC_KNOCK_PUBLIC_API_KEY as string
-);
-
-knockClient.authenticate(process.env.NEXT_PUBLIC_KNOCK_USER_ID as string);
-const knockFeed = knockClient.feeds.initialize(
-  process.env.NEXT_PUBLIC_KNOCK_FEED_CHANNEL_ID as string,
-  {
-    page_size: 20,
-    archived: "include",
-  }
-);
+import { useEffect } from "react";
 
 export default function ActivityFeed() {
-  const [feed, setFeed] = useState<FeedStoreState>({} as FeedStoreState);
-  const { toast } = useToast();
+  const knockClient = useKnockClient();
+  const knockFeed = useNotifications(
+    knockClient,
+    process.env.NEXT_PUBLIC_KNOCK_FEED_CHANNEL_ID as string
+  );
+
+  const { items, metadata, loading } = useNotificationStore(knockFeed);
+
   useEffect(() => {
-    knockFeed.listenForUpdates();
-    const fetchFeed = async () => {
-      await knockFeed.fetch();
-      const feedState = knockFeed.getState();
-      setFeed(feedState);
-    };
-    fetchFeed();
-    knockFeed.on(
-      "items.received.realtime",
-      ({ items }: { items: FeedItem[] }) => {
-        items.forEach((item) => {
-          if (item.data && item.data.showToast) {
-            toast({
-              title: `📨 New feed item at ${new Date(
-                item.inserted_at
-              ).toLocaleString()}`,
-              description: "Snap! This real-time feed is mind-blowing 🤯",
-            });
-          }
-        });
-        setFeed(knockFeed.getState());
-      }
-    );
+    knockFeed.fetch();
+  }, [knockFeed]);
 
-    knockFeed.on("items.*", () => {
-      console.log("calling items.*");
-      setFeed(knockFeed.getState());
-    });
-  }, []);
-
-  const [feedItems, archivedItems] = useMemo(() => {
-    const feedItems = feed?.items?.filter(
-      (item: FeedItem) => !item.archived_at
-    );
-    const archivedItems = feed?.items?.filter(
-      (item: FeedItem) => item.archived_at
-    );
-    return [feedItems, archivedItems];
-  }, [feed]);
   async function markAllAsRead() {
     await knockFeed.markAllAsRead();
   }
@@ -90,9 +51,9 @@ export default function ActivityFeed() {
       <TabsList>
         <TabsTrigger value="inbox">
           Inbox{" "}
-          {feed.loading ? null : (
+          {loading ? null : (
             <Badge className="ml-2" variant="secondary">
-              {feed?.metadata?.unread_count}
+              {metadata?.unread_count}
             </Badge>
           )}
         </TabsTrigger>
@@ -128,8 +89,8 @@ export default function ActivityFeed() {
             Archive all
           </Button>
         </div>
-        {feedItems?.length > 0 ? (
-          feedItems?.map((item: FeedItem) => {
+        {items?.length > 0 ? (
+          items?.map((item: FeedItem) => {
             return (
               <FeedItemCard
                 key={item.id}
@@ -146,7 +107,7 @@ export default function ActivityFeed() {
         )}
       </TabsContent>
       <TabsContent value="archived">
-        {archivedItems?.map((item: FeedItem) => {
+        {/* {archivedItems?.map((item: FeedItem) => {
           return (
             <FeedItemCard
               key={item.id}
@@ -157,7 +118,7 @@ export default function ActivityFeed() {
         })}
       </TabsContent>
       <TabsContent value="all">
-        {feed.items?.map((item: FeedItem) => {
+        {/* {feed.items?.map((item: FeedItem) => {
           return (
             <FeedItemCard
               key={item.id}
@@ -165,7 +126,7 @@ export default function ActivityFeed() {
               knockFeed={knockFeed}
             ></FeedItemCard>
           );
-        })}
+        })} */}
       </TabsContent>
       <Toaster />
     </Tabs>

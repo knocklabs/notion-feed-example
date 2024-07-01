@@ -1,9 +1,9 @@
-import ActivityFeed from "@/components/ActivityFeed";
+import FeedContainer from "@/components/FeedContainer";
 
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <ActivityFeed></ActivityFeed>
+      <FeedContainer></FeedContainer>
     </main>
   );
 }
