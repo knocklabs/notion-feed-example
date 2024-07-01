@@ -19,6 +19,8 @@ import { FeedItemCard } from "./FeedItemCard";
 
 import { useEffect, useMemo, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import PreferenceCenter from "./PreferenceCenter";
+
 const knockClient = new Knock(
   process.env.NEXT_PUBLIC_KNOCK_PUBLIC_API_KEY as string
 );
@@ -103,8 +105,7 @@ export default function ActivityFeed() {
             <DialogHeader>
               <DialogTitle>Notification Preferences</DialogTitle>
               <DialogDescription>
-                This action cannot be undone. This will permanently delete your
-                account and remove your data from our servers.
+                <PreferenceCenter></PreferenceCenter>
               </DialogDescription>
             </DialogHeader>
           </DialogContent>
@@ -127,7 +128,7 @@ export default function ActivityFeed() {
             Archive all
           </Button>
         </div>
-        {feedItems?.length > 1 ? (
+        {feedItems?.length > 0 ? (
           feedItems?.map((item: FeedItem) => {
             return (
               <FeedItemCard
