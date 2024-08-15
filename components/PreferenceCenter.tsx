@@ -1,4 +1,4 @@
-import Knock from "@knocklabs/client";
+import Knock, { PreferenceSet } from "@knocklabs/client";
 import { useEffect, useState } from "react";
 const knockClient = new Knock(
   process.env.NEXT_PUBLIC_KNOCK_PUBLIC_API_KEY as string
@@ -26,6 +26,8 @@ const PreferenceViewConfig = {
     push: "Push",
   },
 };
+type preferenceViewLabels = "new-asset" | "new-comment" | "collaboration";
+type channelTypeLabels = "in_app_feed" | "email" | "push";
 
 function PreferenceSettingsRow({
   preferenceType,
@@ -34,7 +36,7 @@ function PreferenceSettingsRow({
   onChange,
 }: {
   preferenceType: string;
-  preferenceKey: string;
+  preferenceKey: preferenceViewLabels;
   channelTypeSettings: Record<string, boolean>;
   onChange: Function;
 }) {
@@ -55,13 +57,15 @@ function PreferenceSettingsRow({
       <div>
         {Object.keys(PreferenceViewConfig.ChannelTypeLabels).map(
           (channelType) => {
+            console.log(channelType, channelTypeSettings[channelType]);
+            const channelTypeLabel = channelType as channelTypeLabels;
             return (
               <div
                 key={`${preferenceKey}_${channelType}`}
                 style={{ display: "flex", justifyContent: "space-between" }}
               >
                 <label htmlFor={`${preferenceKey}_${channelType}`}>
-                  {PreferenceViewConfig.ChannelTypeLabels[channelType]}
+                  {PreferenceViewConfig.ChannelTypeLabels[channelTypeLabel]}
                 </label>
                 &nbsp;
                 <input
@@ -93,13 +97,38 @@ function PreferenceSettingsRow({
 
 export default function PreferenceCenter() {
   //Create some local state to store the user's preferences
-  const [localPreferences, setLocalPreferences] = useState();
+  const [localPreferences, setLocalPreferences] = useState<PreferenceSet>({
+    id: "default",
+    categories: {
+      collaboration: {
+        channel_types: {
+          email: true,
+          in_app_feed: true,
+        },
+      },
+      "new-asset": {
+        channel_types: {
+          email: false,
+          in_app_feed: true,
+        },
+      },
+    },
+    workflows: {
+      "new-comment": {
+        channel_types: {
+          email: true,
+        },
+      },
+    },
+    channel_types: {},
+  });
 
   //We load the current user's preferences from Knock, and set them to local preferences
 
   useEffect(() => {
     async function fetchPreferences() {
       const preferences = await knockClient.user.getPreferences();
+      console.log(preferences);
       setLocalPreferences(preferences);
     }
     fetchPreferences();
@@ -117,17 +146,26 @@ export default function PreferenceCenter() {
     channelTypeSettings: Record<string, boolean>;
   }) => {
     //create a new preference set with local preferences as starting point
-    const preferenceUpdate = {
+    const preferenceUpdate: PreferenceSet = {
       ...localPreferences,
     };
 
-    //Here we'll make updates to the preference set based on the preferenceType
+    // Here we'll make updates to the preference set based on the preferenceType
     // and override existing channelTypeSettings
-    if (preferenceType === "category") {
+    // since Workflow and Category preferences can also be a Boolean,
+    // we'll check if the preferenceKey contains an channel_types object
+    if (
+      preferenceType === "category" &&
+      typeof preferenceUpdate.categories[preferenceKey] === "object"
+    ) {
+      console.log(typeof preferenceUpdate.categories[preferenceKey]);
       preferenceUpdate.categories[preferenceKey].channel_types =
         channelTypeSettings;
     }
-    if (preferenceType === "workflow") {
+    if (
+      preferenceType === "workflow" &&
+      typeof preferenceUpdate.workflows[preferenceKey] === "object"
+    ) {
       preferenceUpdate.workflows[preferenceKey].channel_types =
         channelTypeSettings;
     }
@@ -143,26 +181,32 @@ export default function PreferenceCenter() {
   return (
     <div className="preferences">
       {Object.keys(localPreferences?.categories).map((category) => {
+        const preferenceKey = category as preferenceViewLabels;
         return (
           <PreferenceSettingsRow
             key={category}
             preferenceType="category"
-            preferenceKey={category}
+            preferenceKey={preferenceKey}
             channelTypeSettings={
-              localPreferences?.categories[category]?.channel_types
+              typeof localPreferences.categories[category] === "object"
+                ? localPreferences?.categories[category]?.channel_types
+                : {}
             }
             onChange={onPreferenceChange}
           ></PreferenceSettingsRow>
         );
       })}
       {Object.keys(localPreferences?.workflows).map((workflow) => {
+        const preferenceKey = workflow as preferenceViewLabels;
         return (
           <PreferenceSettingsRow
             key={workflow}
             preferenceType="workflow"
-            preferenceKey={workflow}
+            preferenceKey={preferenceKey}
             channelTypeSettings={
-              localPreferences?.workflows[workflow]?.channel_types
+              typeof localPreferences?.workflows[workflow] === "object"
+                ? localPreferences?.workflows[workflow]?.channel_types
+                : {}
             }
             onChange={onPreferenceChange}
           ></PreferenceSettingsRow>
